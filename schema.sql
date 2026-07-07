@@ -5,12 +5,16 @@ CREATE TABLE IF NOT EXISTS users (
   name          TEXT NOT NULL,
   email         TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
-  role          TEXT CHECK (role IN ('csm','account_manager')),
+  role          TEXT CHECK (role IN ('csm','account_manager','both')),
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- Backfill for databases created before roles existed.
-ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT CHECK (role IN ('csm','account_manager'));
+ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT CHECK (role IN ('csm','account_manager','both'));
+
+-- Allow the "both" role for databases created before it existed.
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('csm','account_manager','both'));
 
 CREATE TABLE IF NOT EXISTS accounts (
   id                  SERIAL PRIMARY KEY,

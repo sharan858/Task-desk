@@ -1,7 +1,7 @@
 import { query } from '../_db.js';
 import { requireAuth } from '../_auth.js';
 
-const ROLES = ['csm', 'account_manager'];
+const ROLES = ['csm', 'account_manager', 'both'];
 
 export default async function handler(req, res){
   const user = requireAuth(req, res);
@@ -9,7 +9,7 @@ export default async function handler(req, res){
 
   if(req.method === 'PATCH'){
     const { role } = req.body || {};
-    if(!ROLES.includes(role)) return res.status(400).json({ error: 'Role must be either CSM or Account Manager' });
+    if(!ROLES.includes(role)) return res.status(400).json({ error: 'Role must be CSM, Account Manager, or Both' });
 
     const result = await query(
       'UPDATE users SET role = $1 WHERE id = $2 RETURNING id, name, email, role',

@@ -4,7 +4,8 @@ import { useToast } from '../context/ToastContext.jsx';
 
 const ROLES = [
   { id: 'csm', label: 'CSM' },
-  { id: 'account_manager', label: 'Account Manager' }
+  { id: 'account_manager', label: 'Account Manager' },
+  { id: 'both', label: 'Both' }
 ];
 
 export default function Profile({ onRoleChanged }){

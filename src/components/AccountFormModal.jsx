@@ -18,7 +18,7 @@ export default function AccountFormModal({ users, initialAccount, onClose, onSub
   const [busy, setBusy] = useState(false);
 
   const csmOptions = users.filter(u => u.role === 'csm');
-  const managerOptions = users.filter(u => u.role === 'account_manager');
+  const managerOptions = users.filter(u => u.role === 'account_manager' || u.role === 'both');
 
   function set(key, value){ setForm(f => ({ ...f, [key]: value })); }
 
