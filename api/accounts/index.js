@@ -36,16 +36,20 @@ export default async function handler(req, res){
   }
 
   if(req.method === 'POST'){
-    const { name, description, health, ownerId, accountManagerId } = req.body || {};
+    const { name, description, health, ownerId, accountManagerId, pocName, pocEmail } = req.body || {};
     if(!name || !name.trim()) return res.status(400).json({ error: 'Account name is required' });
     if(!ownerId) return res.status(400).json({ error: 'Account owner is required' });
     if(!accountManagerId) return res.status(400).json({ error: 'Account manager is required' });
+    if(!pocName || !pocName.trim()) return res.status(400).json({ error: 'POC name is required' });
+    if(!pocEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(pocEmail.trim())) {
+      return res.status(400).json({ error: 'A valid POC email is required' });
+    }
 
     try{
       const result = await query(
-        `INSERT INTO accounts (name, description, health, owner_id, account_manager_id, created_by)
-         VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
-        [name.trim(), description || '', health || 'healthy', ownerId, accountManagerId, user.id]
+        `INSERT INTO accounts (name, description, health, owner_id, account_manager_id, poc_name, poc_email, created_by)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+        [name.trim(), description || '', health || 'healthy', ownerId, accountManagerId, pocName.trim(), pocEmail.trim(), user.id]
       );
       return res.status(201).json({ account: result.rows[0] });
     }catch(e){

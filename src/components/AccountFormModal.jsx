@@ -9,9 +9,11 @@ export default function AccountFormModal({ users, initialAccount, onClose, onSub
         description: initialAccount.description || '',
         health: initialAccount.health || 'healthy',
         ownerId: String(initialAccount.owner_id),
-        accountManagerId: String(initialAccount.account_manager_id)
+        accountManagerId: String(initialAccount.account_manager_id),
+        pocName: initialAccount.poc_name || '',
+        pocEmail: initialAccount.poc_email || ''
       }
-    : { name: '', description: '', health: 'healthy', ownerId: '', accountManagerId: '' });
+    : { name: '', description: '', health: 'healthy', ownerId: '', accountManagerId: '', pocName: '', pocEmail: '' });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -22,6 +24,8 @@ export default function AccountFormModal({ users, initialAccount, onClose, onSub
     if(!form.name.trim()) return setError('Account name is required');
     if(!form.ownerId) return setError('Account owner is required');
     if(!form.accountManagerId) return setError('Account manager is required');
+    if(!form.pocName.trim()) return setError('POC name is required');
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.pocEmail.trim())) return setError('A valid POC email is required');
     setError(''); setBusy(true);
     try{
       await onSubmit(form);
@@ -65,6 +69,14 @@ export default function AccountFormModal({ users, initialAccount, onClose, onSub
                 <select value={form.health} onChange={e => set('health', e.target.value)}>
                   {HEALTHS.map(h => <option key={h.id} value={h.id}>{h.label}</option>)}
                 </select>
+              </div>
+              <div className="field">
+                <label>Point of Contact *</label>
+                <input value={form.pocName} onChange={e => set('pocName', e.target.value)} placeholder="e.g. Jane Smith" />
+              </div>
+              <div className="field">
+                <label>POC Email *</label>
+                <input type="email" value={form.pocEmail} onChange={e => set('pocEmail', e.target.value)} placeholder="jane@customer.com" />
               </div>
               <div className="field full">
                 <label>Description</label>

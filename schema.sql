@@ -16,10 +16,16 @@ CREATE TABLE IF NOT EXISTS accounts (
                         CHECK (health IN ('healthy','neutral','at_risk','critical')),
   owner_id            INTEGER NOT NULL REFERENCES users(id),
   account_manager_id  INTEGER NOT NULL REFERENCES users(id),
+  poc_name            TEXT NOT NULL DEFAULT '',
+  poc_email           TEXT NOT NULL DEFAULT '',
   created_by          INTEGER REFERENCES users(id),
   created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Backfill for databases created before POC fields existed.
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS poc_name  TEXT NOT NULL DEFAULT '';
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS poc_email TEXT NOT NULL DEFAULT '';
 
 CREATE TABLE IF NOT EXISTS tasks (
   id            SERIAL PRIMARY KEY,

@@ -6,7 +6,9 @@ const FIELD_MAP = {
   description: 'description',
   health: 'health',
   ownerId: 'owner_id',
-  accountManagerId: 'account_manager_id'
+  accountManagerId: 'account_manager_id',
+  pocName: 'poc_name',
+  pocEmail: 'poc_email'
 };
 
 export default async function handler(req, res){
@@ -29,6 +31,12 @@ export default async function handler(req, res){
     const fields = req.body || {};
     if(fields.name !== undefined && !fields.name.trim()){
       return res.status(400).json({ error: 'Account name is required' });
+    }
+    if(fields.pocName !== undefined && !fields.pocName.trim()){
+      return res.status(400).json({ error: 'POC name is required' });
+    }
+    if(fields.pocEmail !== undefined && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.pocEmail.trim())){
+      return res.status(400).json({ error: 'A valid POC email is required' });
     }
     const sets = []; const values = []; let i = 1;
     for(const key in FIELD_MAP){

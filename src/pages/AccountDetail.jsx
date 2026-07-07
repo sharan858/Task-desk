@@ -142,7 +142,11 @@ export default function AccountDetail({ accountId, accounts, users, onBack, onAc
         </div>
         <div className="acct-info-card">
           <h4>People</h4>
-          <p><b>Account Owner:</b> {account.owner_name}<br /><b>Account Manager:</b> {account.account_manager_name}</p>
+          <p>
+            <b>Account Owner:</b> {account.owner_name}<br />
+            <b>Account Manager:</b> {account.account_manager_name}<br />
+            <b>Point of Contact:</b> {account.poc_name} (<a href={`mailto:${account.poc_email}`}>{account.poc_email}</a>)
+          </p>
         </div>
       </div>
 
