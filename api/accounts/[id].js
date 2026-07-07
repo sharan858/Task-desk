@@ -8,7 +8,8 @@ const FIELD_MAP = {
   ownerId: 'owner_id',
   accountManagerId: 'account_manager_id',
   pocName: 'poc_name',
-  pocEmail: 'poc_email'
+  pocEmail: 'poc_email',
+  dealSize: 'deal_size'
 };
 
 export default async function handler(req, res){
@@ -21,7 +22,7 @@ export default async function handler(req, res){
       SELECT a.*, o.name AS owner_name, m.name AS account_manager_name
       FROM accounts a
       LEFT JOIN users o ON o.id = a.owner_id
-      JOIN users m ON m.id = a.account_manager_id
+      LEFT JOIN users m ON m.id = a.account_manager_id
       WHERE a.id = $1`, [id]);
     if(!result.rows.length) return res.status(404).json({ error: 'Account not found' });
     return res.status(200).json({ account: result.rows[0] });
@@ -38,11 +39,18 @@ export default async function handler(req, res){
     if(fields.pocEmail !== undefined && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.pocEmail.trim())){
       return res.status(400).json({ error: 'A valid POC email is required' });
     }
+    if(fields.dealSize !== undefined && fields.dealSize !== null && fields.dealSize !== ''){
+      const n = Number(fields.dealSize);
+      if(Number.isNaN(n) || n < 0) return res.status(400).json({ error: 'Deal size must be a valid non-negative number' });
+    }
     const sets = []; const values = []; let i = 1;
     for(const key in FIELD_MAP){
       if(fields[key] !== undefined){
         sets.push(`${FIELD_MAP[key]} = $${i++}`);
-        values.push(key === 'ownerId' ? (fields[key] || null) : fields[key]);
+        let value = fields[key];
+        if(key === 'ownerId' || key === 'accountManagerId') value = value || null;
+        if(key === 'dealSize') value = (value === '' || value === null) ? null : Number(value);
+        values.push(value);
       }
     }
     if(!sets.length) return res.status(400).json({ error: 'Nothing to update' });

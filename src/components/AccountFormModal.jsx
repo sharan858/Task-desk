@@ -9,11 +9,12 @@ export default function AccountFormModal({ users, initialAccount, onClose, onSub
         description: initialAccount.description || '',
         health: initialAccount.health || 'healthy',
         ownerId: initialAccount.owner_id ? String(initialAccount.owner_id) : '',
-        accountManagerId: String(initialAccount.account_manager_id),
+        accountManagerId: initialAccount.account_manager_id ? String(initialAccount.account_manager_id) : '',
         pocName: initialAccount.poc_name || '',
-        pocEmail: initialAccount.poc_email || ''
+        pocEmail: initialAccount.poc_email || '',
+        dealSize: initialAccount.deal_size ?? ''
       }
-    : { name: '', description: '', health: 'healthy', ownerId: '', accountManagerId: '', pocName: '', pocEmail: '' });
+    : { name: '', description: '', health: 'healthy', ownerId: '', accountManagerId: '', pocName: '', pocEmail: '', dealSize: '' });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -25,12 +26,19 @@ export default function AccountFormModal({ users, initialAccount, onClose, onSub
   async function submit(e){
     e.preventDefault();
     if(!form.name.trim()) return setError('Account name is required');
-    if(!form.accountManagerId) return setError('Account manager is required');
     if(!form.pocName.trim()) return setError('POC name is required');
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.pocEmail.trim())) return setError('A valid POC email is required');
+    if(form.dealSize !== '' && (Number.isNaN(Number(form.dealSize)) || Number(form.dealSize) < 0)){
+      return setError('Deal size must be a valid non-negative number');
+    }
     setError(''); setBusy(true);
     try{
-      await onSubmit({ ...form, ownerId: form.ownerId || null });
+      await onSubmit({
+        ...form,
+        ownerId: form.ownerId || null,
+        accountManagerId: form.accountManagerId || null,
+        dealSize: form.dealSize === '' ? null : Number(form.dealSize)
+      });
     }catch(err){
       setError(err.message);
     }finally{
@@ -60,17 +68,21 @@ export default function AccountFormModal({ users, initialAccount, onClose, onSub
                 </select>
               </div>
               <div className="field">
-                <label>Account Manager *</label>
+                <label>Account Manager</label>
                 <select value={form.accountManagerId} onChange={e => set('accountManagerId', e.target.value)}>
-                  <option value="" disabled>Select a manager…</option>
+                  <option value="">Unassigned</option>
                   {managerOptions.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                 </select>
               </div>
-              <div className="field full">
+              <div className="field">
                 <label>Account health</label>
                 <select value={form.health} onChange={e => set('health', e.target.value)}>
                   {HEALTHS.map(h => <option key={h.id} value={h.id}>{h.label}</option>)}
                 </select>
+              </div>
+              <div className="field">
+                <label>Deal Size</label>
+                <input type="number" min="0" step="0.01" value={form.dealSize} onChange={e => set('dealSize', e.target.value)} placeholder="e.g. 50000" />
               </div>
               <div className="field">
                 <label>Point of Contact *</label>

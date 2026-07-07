@@ -7,6 +7,7 @@ import Ledger from './components/Ledger.jsx';
 import TaskView from './pages/TaskView.jsx';
 import AccountView from './pages/AccountView.jsx';
 import Profile from './pages/Profile.jsx';
+import ImportExport from './pages/ImportExport.jsx';
 
 export default function App(){
   const { user, loading } = useAuth();
@@ -76,6 +77,7 @@ export default function App(){
           <button className={mainView === 'tasks' ? 'on' : ''} onClick={() => setMainView('tasks')}>🗒 Task View</button>
           <button className={mainView === 'accounts' ? 'on' : ''} onClick={() => setMainView('accounts')}>◈ Account View</button>
           <button className={mainView === 'profile' ? 'on' : ''} onClick={() => setMainView('profile')}>👤 Profile</button>
+          <button className={mainView === 'importExport' ? 'on' : ''} onClick={() => setMainView('importExport')}>⇄ Import / Export</button>
         </div>
       </div>
 
@@ -90,6 +92,8 @@ export default function App(){
           periodOffset={periodOffset}
           onRingChange={setRing}
         />
+      ) : mainView === 'importExport' ? (
+        <ImportExport accounts={accounts} users={users} onRefreshAccounts={refreshAccounts} />
       ) : (
         <AccountView accounts={accounts} users={users} onRefreshAccounts={refreshAccounts} />
       )}

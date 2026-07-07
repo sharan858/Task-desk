@@ -18,7 +18,7 @@ export default async function handler(req, res){
         s.last_activity
       FROM accounts a
       LEFT JOIN users o ON o.id = a.owner_id
-      JOIN users m ON m.id = a.account_manager_id
+      LEFT JOIN users m ON m.id = a.account_manager_id
       LEFT JOIN (
         SELECT
           account_id,
@@ -36,19 +36,25 @@ export default async function handler(req, res){
   }
 
   if(req.method === 'POST'){
-    const { name, description, health, ownerId, accountManagerId, pocName, pocEmail } = req.body || {};
+    const { name, description, health, ownerId, accountManagerId, pocName, pocEmail, dealSize } = req.body || {};
     if(!name || !name.trim()) return res.status(400).json({ error: 'Account name is required' });
-    if(!accountManagerId) return res.status(400).json({ error: 'Account manager is required' });
     if(!pocName || !pocName.trim()) return res.status(400).json({ error: 'POC name is required' });
     if(!pocEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(pocEmail.trim())) {
       return res.status(400).json({ error: 'A valid POC email is required' });
     }
+    let dealSizeValue = null;
+    if(dealSize !== undefined && dealSize !== null && dealSize !== ''){
+      dealSizeValue = Number(dealSize);
+      if(Number.isNaN(dealSizeValue) || dealSizeValue < 0){
+        return res.status(400).json({ error: 'Deal size must be a valid non-negative number' });
+      }
+    }
 
     try{
       const result = await query(
-        `INSERT INTO accounts (name, description, health, owner_id, account_manager_id, poc_name, poc_email, created_by)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
-        [name.trim(), description || '', health || 'healthy', ownerId || null, accountManagerId, pocName.trim(), pocEmail.trim(), user.id]
+        `INSERT INTO accounts (name, description, health, owner_id, account_manager_id, poc_name, poc_email, deal_size, created_by)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+        [name.trim(), description || '', health || 'healthy', ownerId || null, accountManagerId || null, pocName.trim(), pocEmail.trim(), dealSizeValue, user.id]
       );
       return res.status(201).json({ account: result.rows[0] });
     }catch(e){

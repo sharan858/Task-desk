@@ -144,8 +144,9 @@ export default function AccountDetail({ accountId, accounts, users, onBack, onAc
           <h4>People</h4>
           <p>
             <b>CSM:</b> {account.owner_name || 'Unassigned'}<br />
-            <b>Account Manager:</b> {account.account_manager_name}<br />
-            <b>Point of Contact:</b> {account.poc_name} (<a href={`mailto:${account.poc_email}`}>{account.poc_email}</a>)
+            <b>Account Manager:</b> {account.account_manager_name || 'Unassigned'}<br />
+            <b>Point of Contact:</b> {account.poc_name} (<a href={`mailto:${account.poc_email}`}>{account.poc_email}</a>)<br />
+            <b>Deal Size:</b> {account.deal_size != null ? `$${Number(account.deal_size).toLocaleString()}` : 'Not set'}
           </p>
         </div>
       </div>
