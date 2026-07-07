@@ -17,7 +17,7 @@ export default async function handler(req, res){
         COALESCE(s.overdue_count, 0)  AS overdue_count,
         s.last_activity
       FROM accounts a
-      JOIN users o ON o.id = a.owner_id
+      LEFT JOIN users o ON o.id = a.owner_id
       JOIN users m ON m.id = a.account_manager_id
       LEFT JOIN (
         SELECT
@@ -38,7 +38,6 @@ export default async function handler(req, res){
   if(req.method === 'POST'){
     const { name, description, health, ownerId, accountManagerId, pocName, pocEmail } = req.body || {};
     if(!name || !name.trim()) return res.status(400).json({ error: 'Account name is required' });
-    if(!ownerId) return res.status(400).json({ error: 'Account owner is required' });
     if(!accountManagerId) return res.status(400).json({ error: 'Account manager is required' });
     if(!pocName || !pocName.trim()) return res.status(400).json({ error: 'POC name is required' });
     if(!pocEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(pocEmail.trim())) {
@@ -49,7 +48,7 @@ export default async function handler(req, res){
       const result = await query(
         `INSERT INTO accounts (name, description, health, owner_id, account_manager_id, poc_name, poc_email, created_by)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
-        [name.trim(), description || '', health || 'healthy', ownerId, accountManagerId, pocName.trim(), pocEmail.trim(), user.id]
+        [name.trim(), description || '', health || 'healthy', ownerId || null, accountManagerId, pocName.trim(), pocEmail.trim(), user.id]
       );
       return res.status(201).json({ account: result.rows[0] });
     }catch(e){

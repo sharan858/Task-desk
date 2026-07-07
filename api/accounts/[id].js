@@ -20,7 +20,7 @@ export default async function handler(req, res){
     const result = await query(`
       SELECT a.*, o.name AS owner_name, m.name AS account_manager_name
       FROM accounts a
-      JOIN users o ON o.id = a.owner_id
+      LEFT JOIN users o ON o.id = a.owner_id
       JOIN users m ON m.id = a.account_manager_id
       WHERE a.id = $1`, [id]);
     if(!result.rows.length) return res.status(404).json({ error: 'Account not found' });
@@ -40,7 +40,10 @@ export default async function handler(req, res){
     }
     const sets = []; const values = []; let i = 1;
     for(const key in FIELD_MAP){
-      if(fields[key] !== undefined){ sets.push(`${FIELD_MAP[key]} = $${i++}`); values.push(fields[key]); }
+      if(fields[key] !== undefined){
+        sets.push(`${FIELD_MAP[key]} = $${i++}`);
+        values.push(key === 'ownerId' ? (fields[key] || null) : fields[key]);
+      }
     }
     if(!sets.length) return res.status(400).json({ error: 'Nothing to update' });
     sets.push('updated_at = now()');

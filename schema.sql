@@ -5,8 +5,12 @@ CREATE TABLE IF NOT EXISTS users (
   name          TEXT NOT NULL,
   email         TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
+  role          TEXT CHECK (role IN ('csm','account_manager')),
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Backfill for databases created before roles existed.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT CHECK (role IN ('csm','account_manager'));
 
 CREATE TABLE IF NOT EXISTS accounts (
   id                  SERIAL PRIMARY KEY,
@@ -14,7 +18,7 @@ CREATE TABLE IF NOT EXISTS accounts (
   description         TEXT NOT NULL DEFAULT '',
   health              TEXT NOT NULL DEFAULT 'healthy'
                         CHECK (health IN ('healthy','neutral','at_risk','critical')),
-  owner_id            INTEGER NOT NULL REFERENCES users(id),
+  owner_id            INTEGER REFERENCES users(id),
   account_manager_id  INTEGER NOT NULL REFERENCES users(id),
   poc_name            TEXT NOT NULL DEFAULT '',
   poc_email           TEXT NOT NULL DEFAULT '',
@@ -26,6 +30,9 @@ CREATE TABLE IF NOT EXISTS accounts (
 -- Backfill for databases created before POC fields existed.
 ALTER TABLE accounts ADD COLUMN IF NOT EXISTS poc_name  TEXT NOT NULL DEFAULT '';
 ALTER TABLE accounts ADD COLUMN IF NOT EXISTS poc_email TEXT NOT NULL DEFAULT '';
+
+-- CSM (formerly "account owner") is now optional — "Unassigned" is a valid state.
+ALTER TABLE accounts ALTER COLUMN owner_id DROP NOT NULL;
 
 CREATE TABLE IF NOT EXISTS tasks (
   id            SERIAL PRIMARY KEY,

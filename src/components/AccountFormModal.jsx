@@ -8,7 +8,7 @@ export default function AccountFormModal({ users, initialAccount, onClose, onSub
         name: initialAccount.name || '',
         description: initialAccount.description || '',
         health: initialAccount.health || 'healthy',
-        ownerId: String(initialAccount.owner_id),
+        ownerId: initialAccount.owner_id ? String(initialAccount.owner_id) : '',
         accountManagerId: String(initialAccount.account_manager_id),
         pocName: initialAccount.poc_name || '',
         pocEmail: initialAccount.poc_email || ''
@@ -17,18 +17,20 @@ export default function AccountFormModal({ users, initialAccount, onClose, onSub
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
+  const csmOptions = users.filter(u => u.role === 'csm');
+  const managerOptions = users.filter(u => u.role === 'account_manager');
+
   function set(key, value){ setForm(f => ({ ...f, [key]: value })); }
 
   async function submit(e){
     e.preventDefault();
     if(!form.name.trim()) return setError('Account name is required');
-    if(!form.ownerId) return setError('Account owner is required');
     if(!form.accountManagerId) return setError('Account manager is required');
     if(!form.pocName.trim()) return setError('POC name is required');
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.pocEmail.trim())) return setError('A valid POC email is required');
     setError(''); setBusy(true);
     try{
-      await onSubmit(form);
+      await onSubmit({ ...form, ownerId: form.ownerId || null });
     }catch(err){
       setError(err.message);
     }finally{
@@ -51,17 +53,17 @@ export default function AccountFormModal({ users, initialAccount, onClose, onSub
                 <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Preference Pools & Spa" autoFocus />
               </div>
               <div className="field">
-                <label>Account Owner *</label>
+                <label>CSM</label>
                 <select value={form.ownerId} onChange={e => set('ownerId', e.target.value)}>
-                  <option value="" disabled>Select an owner…</option>
-                  {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                  <option value="">Unassigned</option>
+                  {csmOptions.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                 </select>
               </div>
               <div className="field">
                 <label>Account Manager *</label>
                 <select value={form.accountManagerId} onChange={e => set('accountManagerId', e.target.value)}>
                   <option value="" disabled>Select a manager…</option>
-                  {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                  {managerOptions.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                 </select>
               </div>
               <div className="field full">

@@ -16,7 +16,7 @@ export default function AccountCard({ account, onOpen }){
       </div>
       {account.description && <div className="acct-desc">{account.description}</div>}
       <div className="acct-people">
-        <span>Owner: <b>{account.owner_name}</b></span>
+        <span>CSM: <b>{account.owner_name || 'Unassigned'}</b></span>
         <span>Manager: <b>{account.account_manager_name}</b></span>
       </div>
       <div className="acct-nums">

@@ -29,8 +29,17 @@ export function AuthProvider({ children }){
     setUser(null);
   }
 
+  async function updateRole(role){
+    const { user } = await api.updateRole(role);
+    setUser(user);
+  }
+
+  async function changePassword(currentPassword, newPassword){
+    await api.changePassword({ currentPassword, newPassword });
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateRole, changePassword }}>
       {children}
     </AuthContext.Provider>
   );

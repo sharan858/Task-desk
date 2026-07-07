@@ -25,6 +25,8 @@ export const api = {
   me: () => request('/auth/me'),
 
   users: () => request('/users'),
+  updateRole: (role) => request('/users/me', { method: 'PATCH', body: { role } }),
+  changePassword: (body) => request('/auth/change-password', { method: 'POST', body }),
 
   accounts: () => request('/accounts'),
   createAccount: (body) => request('/accounts', { method: 'POST', body }),

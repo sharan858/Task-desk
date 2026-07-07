@@ -6,6 +6,7 @@ import Auth from './pages/Auth.jsx';
 import Ledger from './components/Ledger.jsx';
 import TaskView from './pages/TaskView.jsx';
 import AccountView from './pages/AccountView.jsx';
+import Profile from './pages/Profile.jsx';
 
 export default function App(){
   const { user, loading } = useAuth();
@@ -24,6 +25,13 @@ export default function App(){
     try{
       const { accounts } = await api.accounts();
       setAccounts(accounts);
+    }catch(err){ toast(err.message, 'error'); }
+  }, [toast]);
+
+  const refreshUsers = useCallback(async () => {
+    try{
+      const { users } = await api.users();
+      setUsers(users);
     }catch(err){ toast(err.message, 'error'); }
   }, [toast]);
 
@@ -67,10 +75,13 @@ export default function App(){
         <div className="seg">
           <button className={mainView === 'tasks' ? 'on' : ''} onClick={() => setMainView('tasks')}>🗒 Task View</button>
           <button className={mainView === 'accounts' ? 'on' : ''} onClick={() => setMainView('accounts')}>◈ Account View</button>
+          <button className={mainView === 'profile' ? 'on' : ''} onClick={() => setMainView('profile')}>👤 Profile</button>
         </div>
       </div>
 
-      {dataLoading ? (
+      {mainView === 'profile' ? (
+        <Profile onRoleChanged={refreshUsers} />
+      ) : dataLoading ? (
         <div className="spinner" />
       ) : mainView === 'tasks' ? (
         <TaskView
