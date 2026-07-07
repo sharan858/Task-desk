@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TaskDesk — AM Workspace</title>
+<style>
+  :root{
+    --ink:#0F1728;
+    --ink-soft:#475066;
+    --ink-faint:#8A93A8;
+    --surface:#EEF1F6;
+    --card:#FFFFFF;
+    --line:#DDE2EC;
+    --accent:#2E5CE6;
+    --accent-deep:#1B3FAE;
+    --accent-tint:#E8EEFD;
+    --done:#0E9F6E;
+    --done-tint:#E3F6EF;
+    --high:#E5484D;   --high-tint:#FDECEC;
+    --med:#D98A0B;    --med-tint:#FCF2DF;
+    --low:#5E6AD2;    --low-tint:#ECEEFB;
+    --closed:#6B7280; --closed-tint:#EEF0F3;
+    --delay:#C2410C;  --delay-tint:#FDEEE3;
+    --prio:#B42318;   --prio-tint:#FEECEB;
+    --radius:14px;
+    --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--surface);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5;}
+  button{font-family:inherit;cursor:pointer}
+  input,textarea,select{font-family:inherit;font-size:14px;color:var(--ink)}
+
+  .shell{max-width:1180px;margin:0 auto;padding:20px 16px 80px}
+
+  /* ── Header / period ledger ─────────────────────────── */
+  .ledger{background:linear-gradient(135deg,#14235A 0%,#1B3FAE 55%,#2E5CE6 100%);border-radius:18px;padding:22px 24px;color:#fff;box-shadow:0 8px 24px rgba(27,63,174,.25)}
+  .ledger-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+  .brand{font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.75;font-weight:600}
+  .ledger h1{font-size:26px;font-weight:800;letter-spacing:-.02em;margin-top:2px}
+  .weeknav{display:flex;align-items:center;gap:8px;margin-top:16px;flex-wrap:wrap}
+  .weeknav button{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:10px;padding:7px 13px;font-size:13px;font-weight:600;transition:background .15s}
+  .weeknav button:hover{background:rgba(255,255,255,.26)}
+  .weeklabel{font-family:var(--font-mono);font-size:14px;font-weight:600;padding:0 6px;min-width:200px;text-align:center}
+  .seg-dark{display:flex;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:10px;overflow:hidden}
+  .seg-dark button{background:transparent;border:none;color:#fff;padding:7px 13px;font-size:13px;font-weight:600;border-radius:0}
+  .seg-dark button.on{background:rgba(255,255,255,.3)}
+  .ring-wrap{display:flex;align-items:center;gap:14px}
+  .ring{position:relative;width:64px;height:64px;flex:none}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:13px;font-weight:700}
+  .ring-meta{font-size:13px;opacity:.9;line-height:1.45}
+  .ring-meta b{font-size:16px}
+
+  /* ── Stats strip ──────────────────────────────────── */
+  .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:14px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:10px 14px;border-top:3px solid var(--line)}
+  .stat .n{font-family:var(--font-mono);font-size:21px;font-weight:700}
+  .stat .l{font-size:11px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.07em;font-weight:600}
+  .stat.s-open{border-top-color:var(--accent)}
+  .stat.s-priority{border-top-color:var(--prio)}
+  .stat.s-delayed{border-top-color:var(--delay)}
+  .stat.s-completed{border-top-color:var(--done)}
+  .stat.s-closed{border-top-color:var(--closed)}
+
+  /* ── Add form ─────────────────────────────────────── */
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);margin-top:14px;overflow:hidden}
+  .panel-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;cursor:pointer;user-select:none}
+  .panel-head h2{font-size:15px;font-weight:700}
+  .chev{transition:transform .2s;color:var(--ink-faint)}
+  .panel.open .chev{transform:rotate(180deg)}
+  .panel-body{display:none;padding:0 18px 18px;border-top:1px solid var(--line)}
+  .panel.open .panel-body{display:block}
+  .grid2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px}
+  .field label{display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:4px}
+  .field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;background:#FBFCFE;transition:border .15s}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent);background:#fff}
+  .field textarea{resize:vertical;min-height:60px}
+  .full{grid-column:1/-1}
+  .btn{border:none;border-radius:10px;padding:10px 18px;font-weight:700;font-size:14px;transition:filter .15s}
+  .btn:hover{filter:brightness(1.08)}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--ink-soft);font-weight:600}
+  .form-actions{display:flex;gap:10px;margin-top:14px}
+
+  /* ── Toolbar ──────────────────────────────────────── */
+  .toolbar{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;align-items:center}
+  .seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .seg button{background:transparent;border:none;padding:8px 14px;font-size:13px;font-weight:600;color:var(--ink-soft)}
+  .seg button.on{background:var(--accent);color:#fff}
+  .search{flex:1;min-width:160px;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--card)}
+  .search:focus{outline:none;border-color:var(--accent)}
+  .toolbar select{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--card);font-weight:600;color:var(--ink-soft)}
+
+  /* ── Board (stage dashboard) ──────────────────────── */
+  .board{display:grid;grid-template-columns:repeat(5,minmax(230px,1fr));gap:12px;margin-top:18px;overflow-x:auto;padding-bottom:8px}
+  .col{background:#E7EBF3;border-radius:var(--radius);padding:10px;min-height:180px;display:flex;flex-direction:column}
+  .col.dragover{outline:2px dashed var(--accent);outline-offset:-2px;background:var(--accent-tint)}
+  .col-head{display:flex;align-items:center;gap:8px;padding:2px 6px 10px;font-size:13px;font-weight:800;letter-spacing:.02em}
+  .col-dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .col-count{margin-left:auto;font-family:var(--font-mono);font-size:12px;font-weight:700;background:#fff;border-radius:99px;padding:1px 9px;color:var(--ink-soft)}
+  .col-body{display:flex;flex-direction:column;gap:8px;flex:1}
+  .col-empty{font-size:12px;color:var(--ink-faint);text-align:center;padding:18px 6px;border:1.5px dashed #CBD2E0;border-radius:10px}
+
+  .bcard{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:11px 12px;cursor:grab;transition:box-shadow .15s}
+  .bcard:hover{box-shadow:0 3px 12px rgba(15,23,40,.1)}
+  .bcard.dragging{opacity:.5}
+  .bcard .t{font-weight:700;font-size:13.5px;line-height:1.35}
+  .bcard .chips{margin-top:6px}
+  .bcard-foot{display:flex;align-items:center;gap:6px;margin-top:8px}
+  .bcard-foot select{flex:1;border:1px solid var(--line);border-radius:8px;padding:4px 6px;font-size:12px;font-weight:600;background:#FBFCFE;color:var(--ink-soft)}
+  .bcard-foot .icon-btn{font-size:13px;padding:3px 6px}
+  .strike .t{text-decoration:line-through;color:var(--ink-soft)}
+
+  /* ── Task list cards ──────────────────────────────── */
+  .daygroup{margin-top:18px}
+  .daygroup h3{font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;padding-left:2px}
+  .task{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:8px;transition:box-shadow .15s}
+  .task:hover{box-shadow:0 3px 12px rgba(15,23,40,.07)}
+  .task.finished{opacity:.72}
+  .task-row{display:flex;gap:12px;align-items:flex-start}
+  .check{flex:none;width:22px;height:22px;border-radius:50%;border:2px solid var(--line);background:#fff;margin-top:2px;transition:all .15s;position:relative}
+  .check:hover{border-color:var(--done)}
+  .task.finished .check{background:var(--done);border-color:var(--done)}
+  .task.finished .check::after{content:"✓";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:800}
+  .task-main{flex:1;min-width:0}
+  .task-title{font-weight:700;font-size:15px}
+  .task.finished .task-title{text-decoration:line-through;color:var(--ink-soft)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
+  .chip{font-size:12px;font-weight:600;padding:2px 9px;border-radius:99px;background:var(--accent-tint);color:var(--accent-deep)}
+  .chip.person{background:#F1F3F8;color:var(--ink-soft)}
+  .chip.cat{background:#0F1728;color:#fff;letter-spacing:.04em}
+  .chip.p-High{background:var(--high-tint);color:var(--high)}
+  .chip.p-Medium{background:var(--med-tint);color:var(--med)}
+  .chip.p-Low{background:var(--low-tint);color:var(--low)}
+  .chip.due{background:#F1F3F8;color:var(--ink-soft);font-family:var(--font-mono);font-weight:600}
+  .chip.due.overdue{background:var(--high-tint);color:var(--high)}
+  .chip.stage{font-weight:700}
+  .chip.st-open{background:var(--accent-tint);color:var(--accent-deep)}
+  .chip.st-priority{background:var(--prio-tint);color:var(--prio)}
+  .chip.st-delayed{background:var(--delay-tint);color:var(--delay)}
+  .chip.st-completed{background:var(--done-tint);color:var(--done)}
+  .chip.st-closed{background:var(--closed-tint);color:var(--closed)}
+  .task-desc{font-size:14px;color:var(--ink-soft);margin-top:7px;white-space:pre-wrap}
+  .task-actions{display:flex;gap:4px;flex:none;align-items:center}
+  .stage-select{border:1px solid var(--line);border-radius:8px;padding:5px 7px;font-size:12px;font-weight:600;background:#FBFCFE;color:var(--ink-soft)}
+  .icon-btn{background:transparent;border:none;color:var(--ink-faint);font-size:15px;padding:4px 7px;border-radius:7px}
+  .icon-btn:hover{background:#F1F3F8;color:var(--ink)}
+  .notes-area{margin-top:10px;border-top:1px dashed var(--line);padding-top:10px}
+  .notes-label{font-size:11px;font-weight:700;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.09em;margin-bottom:4px}
+  .notes-view{font-size:13.5px;color:var(--ink-soft);white-space:pre-wrap}
+  .notes-edit textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-height:64px;background:#FBFCFE}
+  .notes-edit .row{display:flex;gap:8px;margin-top:6px}
+  .mini{font-size:12px;padding:5px 12px;border-radius:8px}
+  .meta-line{font-family:var(--font-mono);font-size:11px;color:var(--ink-faint);margin-top:8px}
+
+
+  /* ── Accounts view ────────────────────────────────── */
+  .acct-toolbar{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+  .acct-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-top:14px}
+  .acct{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;cursor:pointer;transition:box-shadow .15s,transform .15s}
+  .acct:hover{box-shadow:0 6px 18px rgba(15,23,40,.1);transform:translateY(-1px)}
+  .acct-name{font-weight:800;font-size:16px}
+  .acct-nums{display:flex;gap:12px;font-size:12.5px;color:var(--ink-soft);margin-top:8px;flex-wrap:wrap}
+  .acct-nums b{font-family:var(--font-mono)}
+  .acct-nums .warn{color:var(--high)}
+  .acct-bar{height:6px;background:#E7EBF3;border-radius:99px;margin-top:10px;overflow:hidden}
+  .acct-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--done));border-radius:99px}
+  .acct-last{font-family:var(--font-mono);font-size:11px;color:var(--ink-faint);margin-top:8px}
+  .acct-detail{margin-top:18px}
+  .acct-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .acct-head h2{font-size:20px;font-weight:800;flex:1}
+  .acct-head-actions{display:flex;gap:6px;flex-wrap:wrap}
+  .acct-contacts{margin-top:10px;font-size:13px;color:var(--ink-soft);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .acct-stats{margin-top:12px}
+  .acct-progress{margin-top:12px;font-size:13.5px;color:var(--ink-soft)}
+  .acct-progress b{font-family:var(--font-mono)}
+
+  .empty{background:var(--card);border:1.5px dashed var(--line);border-radius:var(--radius);padding:36px 20px;text-align:center;color:var(--ink-faint);margin-top:18px}
+  .empty b{color:var(--ink-soft)}
+
+  /* ── Export bar ───────────────────────────────────── */
+  .exportbar{display:flex;gap:10px;margin-top:26px;flex-wrap:wrap;align-items:center}
+  .exportbar .hint{font-size:12px;color:var(--ink-faint)}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:10px 20px;border-radius:99px;font-size:13px;font-weight:600;transition:transform .25s;z-index:50}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+
+  @media(max-width:900px){
+    .board{grid-template-columns:repeat(5,240px)}
+  }
+  @media(max-width:600px){
+    .grid2{grid-template-columns:1fr}
+    .stats{grid-template-columns:repeat(3,1fr)}
+    .stat .n{font-size:17px}
+    .ledger h1{font-size:21px}
+  }
+  @media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- Period ledger header -->
+  <div class="ledger">
+    <div class="ledger-top">
+      <div>
+        <div class="brand">Zuper · Account Management</div>
+        <h1>TaskDesk</h1>
+      </div>
+      <div class="ring-wrap" id="ringWrap">
+        <div class="ring">
+          <svg width="64" height="64" viewBox="0 0 64 64">
+            <circle cx="32" cy="32" r="27" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="6"/>
+            <circle id="ringFg" cx="32" cy="32" r="27" fill="none" stroke="#7EF0C0" stroke-width="6"
+              stroke-linecap="round" stroke-dasharray="169.6" stroke-dashoffset="169.6"
+              style="transition:stroke-dashoffset .5s ease"/>
+          </svg>
+          <div class="pct" id="ringPct">0%</div>
+        </div>
+        <div class="ring-meta">
+          <b id="ringDone">0</b> of <b id="ringTotal">0</b> tasks<br>finished <span id="ringMetaWord">today</span>
+        </div>
+      </div>
+    </div>
+    <div class="weeknav" id="periodNavRow">
+      <div class="seg-dark" id="segPeriod">
+        <button class="on" onclick="setPeriodType('day',this)">Day</button>
+        <button onclick="setPeriodType('week',this)">Week</button>
+        <button onclick="setPeriodType('month',this)">Month</button>
+      </div>
+      <button onclick="shiftPeriod(-1)">‹ Prev</button>
+      <span class="weeklabel" id="periodLabel"></span>
+      <button onclick="shiftPeriod(1)">Next ›</button>
+      <button onclick="goCurrentPeriod()" id="btnToday">Today</button>
+    </div>
+  </div>
+
+  <!-- Main view switch -->
+  <div class="toolbar" style="margin-top:14px">
+    <div class="seg" id="segMain">
+      <button class="on" onclick="setMainView('tasks',this)">🗒 Task View</button>
+      <button onclick="setMainView('accounts',this)">◈ Account View</button>
+    </div>
+  </div>
+
+  <!-- Add task -->
+  <div class="panel open" id="addPanel">
+    <div class="panel-head" onclick="togglePanel()">
+      <h2>＋ New task</h2>
+      <span class="chev">▾</span>
+    </div>
+    <div class="panel-body">
+      <div class="grid2">
+        <div class="field full">
+          <label>Task title *</label>
+          <input id="fTitle" placeholder="e.g. Send renewal quote for FY26–27">
+        </div>
+        <div class="field">
+          <label>Customer name</label>
+          <input id="fCustomer" placeholder="e.g. Raymond">
+        </div>
+        <div class="field">
+          <label>Account Name *</label>
+          <select id="fAccount" required onchange="onAccountSelectChange()">
+            <option value="" selected disabled>Select an account…</option>
+            <option value="__new__">+ Add new account…</option>
+          </select>
+          <input id="fAccountNew" placeholder="New account name" style="display:none;margin-top:6px">
+        </div>
+        <div class="field">
+          <label>Category</label>
+          <select id="fCategory">
+            <option selected>AM</option>
+            <option>CSM</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Stage</label>
+          <select id="fStage">
+            <option value="open" selected>Open</option>
+            <option value="priority">Priority</option>
+            <option value="delayed">Delayed</option>
+            <option value="completed">Completed</option>
+            <option value="closed">Closed</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Priority level</label>
+          <select id="fPriority">
+            <option>High</option>
+            <option selected>Medium</option>
+            <option>Low</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Due date</label>
+          <input id="fDue" type="date">
+        </div>
+        <div class="field full">
+          <label>Description</label>
+          <textarea id="fDesc" placeholder="What needs to be done, context, links…"></textarea>
+        </div>
+        <div class="field full">
+          <label>Notes</label>
+          <textarea id="fNotes" placeholder="Running notes — call outcomes, blockers, follow-ups…"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="addTask()">Add task</button>
+        <button class="btn btn-ghost" onclick="clearForm()">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Task View -->
+  <div id="taskViewWrap">
+    <div class="stats">
+      <div class="stat s-open"><div class="n" id="stOpen">0</div><div class="l">Open</div></div>
+      <div class="stat s-priority"><div class="n" id="stPriority">0</div><div class="l">Priority</div></div>
+      <div class="stat s-delayed"><div class="n" id="stDelayed">0</div><div class="l">Delayed</div></div>
+      <div class="stat s-completed"><div class="n" id="stCompleted">0</div><div class="l">Completed</div></div>
+      <div class="stat s-closed"><div class="n" id="stClosed">0</div><div class="l">Closed</div></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="seg" id="segLayout">
+        <button class="on" onclick="setLayout('board',this)">▦ Board</button>
+        <button onclick="setLayout('list',this)">☰ List</button>
+      </div>
+      <input class="search" id="fSearch" placeholder="Search task, customer, account…" oninput="render()">
+      <select id="fFilterCategory" onchange="render()">
+        <option value="all">AM + CSM</option>
+        <option>AM</option>
+        <option>CSM</option>
+      </select>
+      <select id="fFilterPriority" onchange="render()">
+        <option value="all">All priorities</option>
+        <option>High</option><option>Medium</option><option>Low</option>
+      </select>
+      <select id="fFilterStage" onchange="render()">
+        <option value="all">All stages</option>
+        <option value="open">Open</option>
+        <option value="priority">Priority</option>
+        <option value="delayed">Delayed</option>
+        <option value="completed">Completed</option>
+        <option value="closed">Closed</option>
+      </select>
+      <select id="fFilterAccount" onchange="render()">
+        <option value="all">All accounts</option>
+      </select>
+    </div>
+
+    <div id="boardWrap" class="board"></div>
+    <div id="list"></div>
+  </div>
+
+  <!-- Account View -->
+  <div id="accountViewWrap" style="display:none">
+    <div id="accounts"></div>
+  </div>
+
+  <!-- Export -->
+  <div class="exportbar">
+    <button class="btn btn-ghost" onclick="exportCSV('period')">⬇ Export current view (CSV)</button>
+    <button class="btn btn-ghost" onclick="exportCSV('all')">⬇ Export all (CSV)</button>
+    <button class="btn btn-ghost" onclick="exportJSON()">⬇ Backup (JSON)</button>
+    <button class="btn btn-ghost" onclick="document.getElementById('importFile').click()">⬆ Restore backup</button>
+    <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importJSON(event)">
+    <span class="hint">CSV opens in Excel / Google Sheets. JSON backup lets you restore or move to another device.</span>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ───────── State ───────── */
+const KEY = 'zuper-taskdesk-v1';
+const AKEY = KEY + '-companies'; // storage key kept as-is so existing saved accounts aren't lost
+const STAGES = [
+  {id:'open',      label:'Open',      dot:'#2E5CE6'},
+  {id:'priority',  label:'Priority',  dot:'#B42318'},
+  {id:'delayed',   label:'Delayed',   dot:'#C2410C'},
+  {id:'completed', label:'Completed', dot:'#0E9F6E'},
+  {id:'closed',    label:'Closed',    dot:'#6B7280'}
+];
+const FINISHED = ['completed','closed'];
+let tasks = [];
+let accounts = [];
+let selectedAccount = null;
+let mainView = 'tasks';     // 'tasks' | 'accounts'
+let layout = 'board';       // 'board' | 'list'  (Task View sub-layout)
+let periodType = 'day';     // 'day' | 'week' | 'month'
+let periodOffset = 0;
+let loaded = false;
+
+/* ───────── Period helpers (Monday-start weeks) ───────── */
+function dayStart(offset){ const d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+offset); return d; }
+function dayEnd(offset){ const s=dayStart(offset); const e=new Date(s); e.setDate(e.getDate()+1); return e; }
+function startOfWeek(offset){
+  const d = new Date();
+  const day = (d.getDay() + 6) % 7;
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate() - day + offset*7);
+  return d;
+}
+function endOfWeek(offset){
+  const s = startOfWeek(offset);
+  const e = new Date(s); e.setDate(e.getDate()+7);
+  return e;
+}
+function monthStart(offset){ const d=new Date(); d.setHours(0,0,0,0); d.setDate(1); d.setMonth(d.getMonth()+offset); return d; }
+function monthEnd(offset){ const s=monthStart(offset); const e=new Date(s); e.setMonth(e.getMonth()+1); return e; }
+function startOfPeriod(offset){
+  if(periodType==='day') return dayStart(offset);
+  if(periodType==='month') return monthStart(offset);
+  return startOfWeek(offset);
+}
+function endOfPeriod(offset){
+  if(periodType==='day') return dayEnd(offset);
+  if(periodType==='month') return monthEnd(offset);
+  return endOfWeek(offset);
+}
+function fmt(d){ return d.toLocaleDateString('en-IN',{day:'numeric',month:'short'}); }
+function fmtFull(d){ return d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}); }
+function taskAnchor(t){ return t.due ? new Date(t.due+'T00:00:00') : new Date(t.createdAt); }
+function inPeriod(t, offset){
+  const a = taskAnchor(t);
+  return a >= startOfPeriod(offset) && a < endOfPeriod(offset);
+}
+function periodWord(){ return periodType==='day' ? 'today' : periodType==='month' ? 'this month' : 'this week'; }
+function currentPeriodBtnLabel(){ return periodType==='day' ? 'Today' : periodType==='month' ? 'This month' : 'This week'; }
+function periodLabelText(){
+  const s = startOfPeriod(periodOffset), e = new Date(endOfPeriod(periodOffset)-1);
+  if(periodType==='day'){
+    return (periodOffset===0?'Today · ':'') + s.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  }
+  if(periodType==='month'){
+    return (periodOffset===0?'This month · ':'') + s.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+  }
+  return (periodOffset===0?'This week · ':'') + fmt(s)+' – '+fmtFull(e);
+}
+function todayStr(){ const d=new Date(); d.setHours(0,0,0,0); return d; }
+function isOverdue(t){
+  return !FINISHED.includes(t.stage) && t.due && new Date(t.due+'T00:00:00') < todayStr();
+}
+
+/* ───────── Storage (browser localStorage — data lives on this device) ───────── */
+async function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(raw) tasks = JSON.parse(raw);
+  }catch(e){ tasks = []; }
+  try{
+    const araw = localStorage.getItem(AKEY);
+    if(araw) accounts = JSON.parse(araw);
+  }catch(e){ accounts = []; }
+
+  // migrate v1 tasks (status → stage)
+  let migrated = false;
+  tasks.forEach(t=>{
+    if(!t.stage){
+      t.stage = t.status === 'done' ? 'completed' : 'open';
+      migrated = true;
+    }
+    if(!t.category){ t.category = 'AM'; migrated = true; }
+  });
+
+  // migrate older tasks: company (string) → companyId → accountId reference
+  const accountsBefore = accounts.length;
+  tasks.forEach(t=>{
+    if(!t.accountId && t.companyId){ t.accountId = t.companyId; migrated = true; }
+    if(!t.accountId && t.company){
+      const a = ensureAccountNoSave(t.company);
+      if(a) t.accountId = a.id;
+    }
+    if('companyId' in t){ delete t.companyId; migrated = true; }
+    if('company' in t){ delete t.company; migrated = true; }
+  });
+  if(accounts.length !== accountsBefore) saveAccounts();
+  if(migrated) save();
+  loaded = true;
+  render();
+}
+async function save(){
+  try{
+    localStorage.setItem(KEY, JSON.stringify(tasks));
+  }catch(e){ toast('⚠ Could not save — storage may be full or blocked'); }
+}
+async function saveAccounts(){
+  try{
+    localStorage.setItem(AKEY, JSON.stringify(accounts));
+  }catch(e){ toast('⚠ Could not save accounts'); }
+}
+
+/* ───────── Actions ───────── */
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+function onAccountSelectChange(){
+  const sel = document.getElementById('fAccount').value;
+  const newInp = document.getElementById('fAccountNew');
+  if(sel==='__new__'){ newInp.style.display='block'; newInp.focus(); }
+  else { newInp.style.display='none'; newInp.value=''; }
+}
+async function addTask(){
+  const title = document.getElementById('fTitle').value.trim();
+  if(!title){ toast('Give the task a title'); return; }
+  const accountSel = document.getElementById('fAccount').value;
+  let accountId = null;
+  if(accountSel === '__new__'){
+    const newName = document.getElementById('fAccountNew').value.trim();
+    if(!newName){ toast('Enter the new account name'); document.getElementById('fAccountNew').focus(); return; }
+    accountId = ensureAccount(newName).id;
+  } else {
+    accountId = accountSel || null;
+  }
+  if(!accountId){ toast('Account Name is required'); document.getElementById('fAccount').focus(); return; }
+  const stage = document.getElementById('fStage').value;
+  tasks.unshift({
+    id: uid(),
+    title,
+    customer: document.getElementById('fCustomer').value.trim(),
+    accountId,
+    category: document.getElementById('fCategory').value,
+    priority: document.getElementById('fPriority').value,
+    due:      document.getElementById('fDue').value || null,
+    desc:     document.getElementById('fDesc').value.trim(),
+    notes:    document.getElementById('fNotes').value.trim(),
+    stage,
+    createdAt: new Date().toISOString(),
+    completedAt: FINISHED.includes(stage) ? new Date().toISOString() : null
+  });
+  await save();
+  clearForm();
+  render();
+  toast('Task added');
+}
+function clearForm(){
+  ['fTitle','fCustomer','fDesc','fNotes','fDue'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fPriority').value='Medium';
+  document.getElementById('fStage').value='open';
+  document.getElementById('fCategory').value='AM';
+  document.getElementById('fAccount').value='';
+  const newInp = document.getElementById('fAccountNew');
+  newInp.value=''; newInp.style.display='none';
+}
+async function setStage(id, stage){
+  const t = tasks.find(t=>t.id===id); if(!t) return;
+  const wasFinished = FINISHED.includes(t.stage);
+  t.stage = stage;
+  const nowFinished = FINISHED.includes(stage);
+  if(nowFinished && !wasFinished) t.completedAt = new Date().toISOString();
+  if(!nowFinished) t.completedAt = null;
+  await save(); render();
+  if(stage==='completed') toast('Nice — task completed ✓');
+  else if(stage==='closed') toast('Task closed');
+  else toast('Moved to ' + STAGES.find(s=>s.id===stage).label);
+}
+async function setCategory(id, category){
+  const t = tasks.find(t=>t.id===id); if(!t) return;
+  t.category = category;
+  await save(); render(); toast('Category → ' + category);
+}
+async function toggleDone(id){
+  const t = tasks.find(t=>t.id===id); if(!t) return;
+  await setStage(id, FINISHED.includes(t.stage) ? 'open' : 'completed');
+}
+async function delTask(id){
+  if(!confirm('Delete this task permanently?')) return;
+  tasks = tasks.filter(t=>t.id!==id);
+  await save(); render(); toast('Task deleted');
+}
+let editingNotes = null;
+function editNotes(id){
+  editingNotes = id;
+  if(mainView==='tasks' && layout==='board'){ setLayout('list', document.querySelector('#segLayout button:nth-child(2)')); }
+  else { render(); }
+}
+async function saveNotes(id){
+  const t = tasks.find(t=>t.id===id); if(!t) return;
+  t.notes = document.getElementById('notesInput-'+id).value.trim();
+  editingNotes = null;
+  await save(); render(); toast('Notes saved');
+}
+function cancelNotes(){ editingNotes = null; render(); }
+
+/* ───────── View / nav ───────── */
+function setMainView(v, el){
+  mainView = v;
+  document.querySelectorAll('#segMain button').forEach(b=>b.classList.remove('on'));
+  if(el) el.classList.add('on');
+  render();
+}
+function setLayout(v, el){
+  layout = v;
+  document.querySelectorAll('#segLayout button').forEach(b=>b.classList.remove('on'));
+  if(el) el.classList.add('on');
+  render();
+}
+function setPeriodType(t, el){
+  periodType = t;
+  periodOffset = 0;
+  document.querySelectorAll('#segPeriod button').forEach(b=>b.classList.remove('on'));
+  if(el) el.classList.add('on');
+  render();
+}
+function shiftPeriod(n){ periodOffset+=n; render(); }
+function goCurrentPeriod(){ periodOffset=0; render(); }
+function togglePanel(){ document.getElementById('addPanel').classList.toggle('open'); }
+
+/* ───────── Drag & drop ───────── */
+let dragId = null;
+function onDragStart(e, id){
+  dragId = id;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+function onDragEnd(e){ e.currentTarget.classList.remove('dragging'); }
+function onDragOver(e){ e.preventDefault(); e.currentTarget.classList.add('dragover'); }
+function onDragLeave(e){ e.currentTarget.classList.remove('dragover'); }
+function onDrop(e, stage){
+  e.preventDefault();
+  e.currentTarget.classList.remove('dragover');
+  if(dragId) setStage(dragId, stage);
+  dragId = null;
+}
+
+/* ───────── Render ───────── */
+function esc(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function stageLabel(id){ const s=STAGES.find(s=>s.id===id); return s?s.label:id; }
+
+function visibleTasks(base){
+  const q = document.getElementById('fSearch').value.toLowerCase();
+  const cf = document.getElementById('fFilterCategory').value;
+  const pf = document.getElementById('fFilterPriority').value;
+  const sf = document.getElementById('fFilterStage').value;
+  const af = document.getElementById('fFilterAccount').value;
+  let vis = base.slice();
+  if(cf!=='all') vis = vis.filter(t=>t.category===cf);
+  if(pf!=='all') vis = vis.filter(t=>t.priority===pf);
+  if(sf!=='all') vis = vis.filter(t=>t.stage===sf);
+  if(af!=='all') vis = vis.filter(t=>t.accountId===af);
+  if(q) vis = vis.filter(t=>(t.title+' '+t.customer+' '+accountName(t)+' '+t.desc+' '+t.notes).toLowerCase().includes(q));
+  return vis;
+}
+
+function refreshAccountSelects(){
+  const sorted = accounts.slice().sort((a,b)=>a.name.localeCompare(b.name));
+  const optHtml = sorted.map(a=>`<option value="${a.id}">${esc(a.name)}</option>`).join('');
+
+  const fAccount = document.getElementById('fAccount');
+  const prevAdd = fAccount.value;
+  fAccount.innerHTML = `<option value="" disabled>Select an account…</option>${optHtml}<option value="__new__">+ Add new account…</option>`;
+  fAccount.value = (prevAdd==='__new__' || sorted.some(a=>a.id===prevAdd)) ? prevAdd : '';
+
+  const fFilter = document.getElementById('fFilterAccount');
+  const prevFilter = fFilter.value;
+  fFilter.innerHTML = `<option value="all">All accounts</option>${optHtml}`;
+  fFilter.value = sorted.some(a=>a.id===prevFilter) ? prevFilter : 'all';
+}
+
+function render(){
+  if(!loaded) return;
+
+  document.getElementById('periodNavRow').style.display = mainView==='tasks' ? 'flex' : 'none';
+  document.getElementById('ringWrap').style.display = mainView==='tasks' ? 'flex' : 'none';
+  document.getElementById('taskViewWrap').style.display = mainView==='tasks' ? 'block' : 'none';
+  document.getElementById('accountViewWrap').style.display = mainView==='accounts' ? 'block' : 'none';
+
+  refreshAccountSelects();
+
+  if(mainView==='accounts'){
+    renderAccounts(document.getElementById('accounts'));
+    return;
+  }
+
+  document.getElementById('periodLabel').textContent = periodLabelText();
+  document.getElementById('btnToday').textContent = currentPeriodBtnLabel();
+  document.getElementById('btnToday').style.display = periodOffset===0 ? 'none' : 'inline-block';
+  document.getElementById('ringMetaWord').textContent = periodWord();
+
+  const periodTasks = tasks.filter(t=>inPeriod(t,periodOffset));
+
+  const counts = {};
+  STAGES.forEach(st=>counts[st.id]=0);
+  periodTasks.forEach(t=>{ if(counts[t.stage]!=null) counts[t.stage]++; });
+  document.getElementById('stOpen').textContent = counts.open;
+  document.getElementById('stPriority').textContent = counts.priority;
+  document.getElementById('stDelayed').textContent = counts.delayed;
+  document.getElementById('stCompleted').textContent = counts.completed;
+  document.getElementById('stClosed').textContent = counts.closed;
+
+  const finished = counts.completed + counts.closed;
+  const total = periodTasks.length, pct = total? Math.round(finished/total*100):0;
+  document.getElementById('ringPct').textContent = pct+'%';
+  document.getElementById('ringDone').textContent = finished;
+  document.getElementById('ringTotal').textContent = total;
+  document.getElementById('ringFg').style.strokeDashoffset = 169.6*(1-pct/100);
+
+  const vis = visibleTasks(periodTasks);
+  const boardEl = document.getElementById('boardWrap');
+  const listEl = document.getElementById('list');
+
+  if(layout==='board'){
+    listEl.innerHTML = '';
+    boardEl.style.display = 'grid';
+    boardEl.innerHTML = STAGES.map(st=>{
+      const items = vis.filter(t=>t.stage===st.id)
+        .sort((a,b)=>taskAnchor(a)-taskAnchor(b));
+      return `
+      <div class="col" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'${st.id}')">
+        <div class="col-head">
+          <span class="col-dot" style="background:${st.dot}"></span>${st.label}
+          <span class="col-count">${items.length}</span>
+        </div>
+        <div class="col-body">
+          ${items.length ? items.map(boardCard).join('') : `<div class="col-empty">Drop tasks here</div>`}
+        </div>
+      </div>`;
+    }).join('');
+  } else {
+    boardEl.style.display = 'none';
+    boardEl.innerHTML = '';
+    renderList(vis, listEl);
+  }
+}
+
+function boardCard(t){
+  const overdue = isOverdue(t);
+  const finished = FINISHED.includes(t.stage);
+  return `
+  <div class="bcard ${finished?'strike':''}" draggable="true"
+       ondragstart="onDragStart(event,'${t.id}')" ondragend="onDragEnd(event)">
+    <div class="t">${esc(t.title)}</div>
+    <div class="chips">
+      ${t.category?`<span class="chip cat">${esc(t.category)}</span>`:''}
+      <span class="chip">${esc(accountName(t))}</span>
+      ${t.customer?`<span class="chip person">👤 ${esc(t.customer)}</span>`:''}
+      <span class="chip p-${t.priority}">${t.priority}</span>
+      ${t.due?`<span class="chip due ${overdue?'overdue':''}">${overdue?'⚠ ':''}${fmt(new Date(t.due+'T00:00:00'))}</span>`:''}
+    </div>
+    <div class="bcard-foot">
+      <select onchange="setStage('${t.id}', this.value)" title="Move to stage">
+        ${STAGES.map(s=>`<option value="${s.id}" ${s.id===t.stage?'selected':''}>${s.label}</option>`).join('')}
+      </select>
+      <button class="icon-btn" title="Open details & notes" onclick="editNotes('${t.id}')">✎</button>
+      <button class="icon-btn" title="Delete" onclick="delTask('${t.id}')">🗑</button>
+    </div>
+  </div>`;
+}
+
+function renderList(vis, listEl){
+  if(!vis.length){
+    listEl.innerHTML = `<div class="empty">${
+      tasks.length===0
+        ? '<b>No tasks yet.</b><br>Add your first one above — renewals, follow-ups, escalations, MoM action items.'
+        : '<b>Nothing matches.</b><br>Try a different day, week, month, filter, or search term.'
+    }</div>`;
+    return;
+  }
+  const active = vis.filter(t=>!FINISHED.includes(t.stage)).sort((a,b)=>taskAnchor(a)-taskAnchor(b));
+  const finished = vis.filter(t=>FINISHED.includes(t.stage)).sort((a,b)=>new Date(b.completedAt||b.createdAt)-new Date(a.completedAt||a.createdAt));
+  let html='';
+  if(active.length){ html+=`<div class="daygroup"><h3>Active · ${active.length}</h3>${active.map(listCard).join('')}</div>`; }
+  if(finished.length){ html+=`<div class="daygroup"><h3>Finished · ${finished.length}</h3>${finished.map(listCard).join('')}</div>`; }
+  listEl.innerHTML = html;
+}
+
+function listCard(t){
+  const overdue = isOverdue(t);
+  const finished = FINISHED.includes(t.stage);
+  const dueChip = t.due ? `<span class="chip due ${overdue?'overdue':''}">${overdue?'⚠ ':''}Due ${fmt(new Date(t.due+'T00:00:00'))}</span>` : '';
+  const notesBlock = editingNotes===t.id
+    ? `<div class="notes-area notes-edit">
+         <div class="notes-label">Notes</div>
+         <textarea id="notesInput-${t.id}">${esc(t.notes)}</textarea>
+         <div class="row">
+           <button class="btn btn-primary mini" onclick="saveNotes('${t.id}')">Save notes</button>
+           <button class="btn btn-ghost mini" onclick="cancelNotes()">Cancel</button>
+         </div>
+       </div>`
+    : (t.notes ? `<div class="notes-area"><div class="notes-label">Notes</div><div class="notes-view">${esc(t.notes)}</div></div>` : '');
+  return `
+  <div class="task ${finished?'finished':''}">
+    <div class="task-row">
+      <button class="check" title="${finished?'Reopen':'Mark completed'}" onclick="toggleDone('${t.id}')"></button>
+      <div class="task-main">
+        <div class="task-title">${esc(t.title)}</div>
+        <div class="chips">
+          ${t.category?`<span class="chip cat">${esc(t.category)}</span>`:''}
+          <span class="chip stage st-${t.stage}">${stageLabel(t.stage)}</span>
+          <span class="chip">${esc(accountName(t))}</span>
+          ${t.customer?`<span class="chip person">👤 ${esc(t.customer)}</span>`:''}
+          <span class="chip p-${t.priority}">${t.priority}</span>
+          ${dueChip}
+        </div>
+        ${t.desc?`<div class="task-desc">${esc(t.desc)}</div>`:''}
+        ${notesBlock}
+        <div class="meta-line">Created ${fmtFull(new Date(t.createdAt))}${t.completedAt?` · Finished ${fmtFull(new Date(t.completedAt))}`:''}</div>
+      </div>
+      <div class="task-actions">
+        <select class="stage-select" onchange="setCategory('${t.id}', this.value)" title="Category">
+          ${['AM','CSM'].map(c=>`<option ${c===t.category?'selected':''}>${c}</option>`).join('')}
+        </select>
+        <select class="stage-select" onchange="setStage('${t.id}', this.value)" title="Move to stage">
+          ${STAGES.map(s=>`<option value="${s.id}" ${s.id===t.stage?'selected':''}>${s.label}</option>`).join('')}
+        </select>
+        <button class="icon-btn" title="Edit notes" onclick="editNotes('${t.id}')">✎</button>
+        <button class="icon-btn" title="Delete" onclick="delTask('${t.id}')">🗑</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ───────── Account base ───────── */
+function normName(s){ return (s||'').trim().toLowerCase(); }
+function findAccount(name){ return accounts.find(a=>normName(a.name)===normName(name)); }
+function accountName(t){ const a = accounts.find(a=>a.id===t.accountId); return a ? a.name : ''; }
+function accountTasks(id){ return tasks.filter(t=>t.accountId===id); }
+function ensureAccountNoSave(name){
+  name = (name||'').trim();
+  if(!name) return null;
+  let a = findAccount(name);
+  if(!a){ a = {id:uid(), name, createdAt:new Date().toISOString()}; accounts.push(a); }
+  return a;
+}
+function ensureAccount(name){
+  const before = accounts.length;
+  const a = ensureAccountNoSave(name);
+  if(a && accounts.length!==before) saveAccounts();
+  return a;
+}
+async function addAccountManual(){
+  const inp = document.getElementById('newAccountName');
+  const name = inp.value.trim();
+  if(!name){ toast('Type an account name'); return; }
+  if(findAccount(name)){ toast('Already in your account base'); return; }
+  ensureAccount(name);
+  inp.value=''; render(); toast('Account added');
+}
+async function renameAccount(id){
+  const a = accounts.find(a=>a.id===id); if(!a) return;
+  const nn = prompt('Rename account:', a.name);
+  if(!nn || !nn.trim() || nn.trim()===a.name) return;
+  const name = nn.trim();
+  if(accounts.some(x=>x.id!==id && normName(x.name)===normName(name))){
+    toast('Another account already has that name'); return;
+  }
+  a.name = name;
+  await saveAccounts(); render(); toast('Account renamed');
+}
+async function deleteAccount(id){
+  const a = accounts.find(a=>a.id===id); if(!a) return;
+  const n = accountTasks(a.id).length;
+  if(n){
+    alert('Can\'t remove "'+a.name+'" — '+n+' task(s) are still linked to it. Reassign or delete those tasks first.');
+    return;
+  }
+  if(!confirm('Remove "'+a.name+'" from your account base?')) return;
+  accounts = accounts.filter(x=>x.id!==id);
+  if(selectedAccount===id) selectedAccount=null;
+  await saveAccounts(); render(); toast('Account removed');
+}
+function openAccount(id){ selectedAccount=id; render(); }
+function closeAccount(){ selectedAccount=null; render(); }
+
+function renderAccounts(el){
+  if(selectedAccount){ el.innerHTML = accountDetail(); return; }
+  const rows = accounts.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(a=>{
+    const ts = accountTasks(a.id);
+    const active = ts.filter(t=>!FINISHED.includes(t.stage)).length;
+    const fin = ts.length-active;
+    const over = ts.filter(isOverdue).length;
+    const last = ts.length? new Date(Math.max(...ts.map(t=>+new Date(t.completedAt||t.createdAt)))) : null;
+    const pct = ts.length? Math.round(fin/ts.length*100):0;
+    return '<div class="acct" onclick="openAccount(\''+a.id+'\')">'
+      +'<div class="acct-name">'+esc(a.name)+'</div>'
+      +'<div class="acct-nums">'
+      +'<span><b>'+ts.length+'</b> total</span>'
+      +'<span><b>'+active+'</b> active</span>'
+      +'<span><b>'+fin+'</b> finished</span>'
+      +(over?'<span class="warn"><b>'+over+'</b> overdue</span>':'')
+      +'</div>'
+      +'<div class="acct-bar"><i style="width:'+pct+'%"></i></div>'
+      +'<div class="acct-last">'+(last?'Last activity '+fmtFull(last):'No tasks yet')+'</div>'
+      +'</div>';
+  }).join('');
+  el.innerHTML =
+    '<div class="acct-toolbar">'
+    +'<input id="newAccountName" class="search" placeholder="Add an account…" onkeydown="if(event.key===\'Enter\')addAccountManual()">'
+    +'<button class="btn btn-primary" onclick="addAccountManual()">Add account</button>'
+    +'</div>'
+    +(accounts.length
+      ? '<div class="acct-grid">'+rows+'</div>'
+      : '<div class="empty"><b>No accounts yet.</b><br>Add one above — or just create a task with an account name and it lands here automatically.</div>');
+}
+
+function accountDetail(){
+  const a = accounts.find(x=>x.id===selectedAccount);
+  if(!a){ selectedAccount=null; return ''; }
+  const ts = accountTasks(a.id).sort((x,y)=>new Date(y.createdAt)-new Date(x.createdAt));
+  const counts={}; STAGES.forEach(s=>counts[s.id]=0); ts.forEach(t=>{ if(counts[t.stage]!=null)counts[t.stage]++; });
+  const contacts=[...new Set(ts.map(t=>t.customer).filter(Boolean))];
+  const fin=counts.completed+counts.closed;
+  const pct= ts.length? Math.round(fin/ts.length*100):0;
+  return '<div class="acct-detail">'
+    +'<div class="acct-head">'
+    +'<button class="btn btn-ghost mini" onclick="closeAccount()">‹ All accounts</button>'
+    +'<h2>'+esc(a.name)+'</h2>'
+    +'<div class="acct-head-actions">'
+    +'<button class="btn btn-ghost mini" onclick="renameAccount(\''+a.id+'\')">Rename</button>'
+    +'<button class="btn btn-ghost mini" onclick="exportAccountCSV(\''+a.id+'\')">⬇ Export account CSV</button>'
+    +'<button class="btn btn-ghost mini" onclick="deleteAccount(\''+a.id+'\')">Remove</button>'
+    +'</div></div>'
+    +(contacts.length?'<div class="acct-contacts">Contacts:'+contacts.map(x=>' <span class="chip person">👤 '+esc(x)+'</span>').join('')+'</div>':'')
+    +'<div class="stats acct-stats">'
+    +STAGES.map(s=>'<div class="stat s-'+s.id+'"><div class="n">'+counts[s.id]+'</div><div class="l">'+s.label+'</div></div>').join('')
+    +'</div>'
+    +'<div class="acct-progress">Account progress: <b>'+fin+'</b> of <b>'+ts.length+'</b> tasks finished ('+pct+'%)</div>'
+    +(ts.length
+      ? '<div class="daygroup"><h3>All tasks · '+ts.length+' tasks</h3>'+ts.map(listCard).join('')+'</div>'
+      : '<div class="empty"><b>No tasks yet for this account.</b><br>Create a task with account "'+esc(a.name)+'" and it shows up here.</div>')
+    +'</div>';
+}
+
+/* ───────── Export ───────── */
+function csvCell(v){ v=(v==null?'':String(v)); return '"'+v.replace(/"/g,'""')+'"'; }
+function download(name, content, type){
+  const blob = new Blob([content], {type});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(a.href);
+}
+function exportCSV(scope){
+  const rows = scope==='period' ? tasks.filter(t=>inPeriod(t,periodOffset)) : tasks;
+  if(!rows.length){ toast('Nothing to export'); return; }
+  const head = ['Category','Task','Account Name','Customer Name','Stage','Priority','Due Date','Description','Notes','Created At','Finished At'];
+  const lines = [head.join(',')].concat(rows.map(t=>[
+    t.category||'', t.title, accountName(t), t.customer, stageLabel(t.stage), t.priority,
+    t.due||'', t.desc, t.notes,
+    new Date(t.createdAt).toLocaleString('en-IN'),
+    t.completedAt?new Date(t.completedAt).toLocaleString('en-IN'):''
+  ].map(csvCell).join(',')));
+  const name = scope==='period'
+    ? `taskdesk-${periodType}-${startOfPeriod(periodOffset).toISOString().slice(0,10)}.csv`
+    : `taskdesk-all-tasks.csv`;
+  download(name, '﻿'+lines.join('\r\n'), 'text/csv;charset=utf-8');
+  toast('CSV downloaded');
+}
+function exportAccountCSV(id){
+  const a = accounts.find(x=>x.id===id); if(!a) return;
+  const rows = accountTasks(a.id);
+  if(!rows.length){ toast('No tasks for this account yet'); return; }
+  const head = ['Category','Task','Account Name','Customer Name','Stage','Priority','Due Date','Description','Notes','Created At','Finished At'];
+  const lines = [head.join(',')].concat(rows.map(t=>[
+    t.category||'', t.title, accountName(t), t.customer, stageLabel(t.stage), t.priority,
+    t.due||'', t.desc, t.notes,
+    new Date(t.createdAt).toLocaleString('en-IN'),
+    t.completedAt?new Date(t.completedAt).toLocaleString('en-IN'):''
+  ].map(csvCell).join(',')));
+  const slug = a.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  download('taskdesk-'+slug+'.csv', '﻿'+lines.join('\r\n'), 'text/csv;charset=utf-8');
+  toast('Account CSV downloaded');
+}
+function exportJSON(){
+  if(!tasks.length && !accounts.length){ toast('Nothing to export'); return; }
+  download('taskdesk-backup.json', JSON.stringify({tasks, accounts},null,2), 'application/json');
+  toast('Backup downloaded');
+}
+function importJSON(ev){
+  const file = ev.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    try{
+      const raw = JSON.parse(reader.result);
+      let incomingTasks, incomingAccounts;
+      if(Array.isArray(raw)){ incomingTasks = raw; incomingAccounts = []; }
+      else if(raw && Array.isArray(raw.tasks)){
+        incomingTasks = raw.tasks;
+        incomingAccounts = Array.isArray(raw.accounts) ? raw.accounts : (Array.isArray(raw.companies) ? raw.companies : []);
+      }
+      else throw new Error('bad format');
+
+      const accountsBefore = accounts.length;
+      incomingAccounts.forEach(a=>{
+        if(a && a.id && a.name && !accounts.some(x=>x.id===a.id) && !findAccount(a.name)){
+          accounts.push({id:a.id, name:a.name, createdAt:a.createdAt||new Date().toISOString()});
+        }
+      });
+
+      const existing = new Set(tasks.map(t=>t.id));
+      let added = 0;
+      incomingTasks.forEach(t=>{
+        if(t && t.id && t.title && !existing.has(t.id)){
+          if(!t.stage) t.stage = t.status==='done' ? 'completed' : 'open';
+          if(!t.category) t.category = 'AM';
+          if(!t.accountId && t.companyId) t.accountId = t.companyId;
+          if(!t.accountId && t.company){
+            const a = ensureAccountNoSave(t.company);
+            if(a) t.accountId = a.id;
+          }
+          delete t.companyId; delete t.company; delete t.status;
+          tasks.push(t); added++;
+        }
+      });
+      tasks.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+      if(accounts.length!==accountsBefore) await saveAccounts();
+      await save(); render();
+      toast(added ? `Restored ${added} task${added>1?'s':''}` : 'Nothing new to restore');
+    }catch(e){ toast('⚠ That file isn\'t a valid TaskDesk backup'); }
+  };
+  reader.readAsText(file);
+  ev.target.value = '';
+}
+
+/* ───────── Toast ───────── */
+let toastTimer;
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), 2200);
+}
+
+/* ───────── Init ───────── */
+load();
+</script>
+</body>
+</html>
