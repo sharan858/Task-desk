@@ -49,6 +49,38 @@ function buildWorkbook(accounts){
   return wb;
 }
 
+const SAMPLE_ROWS = [
+  {
+    name: 'Acme Corp',
+    csm: 'Deepak',
+    accountManager: 'Jasper',
+    health: 'Healthy',
+    dealSize: 50000,
+    pocName: 'Jane Smith',
+    pocEmail: 'jane@acme.com',
+    description: 'Sample row — CSM/Account Manager must match an existing user with that role, or leave blank for Unassigned.'
+  },
+  {
+    name: 'Beta Industries',
+    csm: '',
+    accountManager: '',
+    health: 'Neutral',
+    dealSize: '',
+    pocName: 'Bob Lee',
+    pocEmail: 'bob@beta.com',
+    description: 'Sample row — CSM, Account Manager and Deal Size can all be left blank.'
+  }
+];
+
+function buildTemplateWorkbook(){
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Accounts');
+  ws.columns = COLUMNS;
+  ws.getRow(1).font = { bold: true };
+  SAMPLE_ROWS.forEach(row => ws.addRow(row));
+  return wb;
+}
+
 async function parseWorkbook(file){
   const buffer = await file.arrayBuffer();
   const wb = new ExcelJS.Workbook();
@@ -120,9 +152,21 @@ function rowToPayload(row, users){
 export default function ImportExport({ accounts, users, onRefreshAccounts }){
   const toast = useToast();
   const [exporting, setExporting] = useState(false);
+  const [downloadingTemplate, setDownloadingTemplate] = useState(false);
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(null);
   const [results, setResults] = useState(null);
+
+  async function handleDownloadTemplate(){
+    setDownloadingTemplate(true);
+    try{
+      await downloadWorkbook(buildTemplateWorkbook(), 'taskdesk-account-import-template.xlsx');
+    }catch(err){
+      toast(err.message, 'error');
+    }finally{
+      setDownloadingTemplate(false);
+    }
+  }
 
   async function handleExport(){
     setExporting(true);
@@ -186,11 +230,17 @@ export default function ImportExport({ accounts, users, onRefreshAccounts }){
       <div className="acct-info-card" style={{ marginTop: 16, maxWidth: 520 }}>
         <h4>Import accounts</h4>
         <p style={{ marginBottom: 10 }}>
-          Upload an Excel file with the same columns as the export (Account Name, CSM, Account Manager,
-          Account Health, Deal Size, Point of Contact, POC Email, Description). Export an empty file first
-          to use as a template. CSM and Account Manager are matched by name against users who have that role.
+          Upload an Excel file with the same columns used to create an account (Account Name, CSM, Account
+          Manager, Account Health, Deal Size, Point of Contact, POC Email, Description). CSM and Account
+          Manager are matched by name against users who have that role — leave blank for Unassigned.
         </p>
-        <input type="file" accept=".xlsx" disabled={importing} onChange={handleImport} />
+        <button className="btn btn-ghost" disabled={downloadingTemplate} onClick={handleDownloadTemplate} style={{ marginBottom: 12 }}>
+          {downloadingTemplate ? 'Preparing…' : '⬇ Download sample template'}
+        </button>
+        <div className="field">
+          <label>Excel file to import</label>
+          <input type="file" accept=".xlsx" disabled={importing} onChange={handleImport} />
+        </div>
         {importing && (
           <div className="hint" style={{ marginTop: 8 }}>
             {progress ? `Importing ${progress.current} of ${progress.total}…` : 'Reading file…'}
