@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Modal from './Modal.jsx';
 
 const emptyForm = { title: '', customer: '', accountId: '', category: 'AM', stage: 'open', priority: 'Medium', dueDate: '', description: '', notes: '' };
 
@@ -36,8 +37,7 @@ export default function TaskFormModal({ accounts, initialTask, lockAccountId, on
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
+    <Modal onClose={onClose}>
         <div className="modal-head">
           <h3>{initialTask ? 'Edit task' : 'New task'}</h3>
           <button className="icon-btn" onClick={onClose}>✕</button>
@@ -105,7 +105,6 @@ export default function TaskFormModal({ accounts, initialTask, lockAccountId, on
             <button className="btn btn-primary" disabled={busy}>{busy ? 'Saving…' : initialTask ? 'Save changes' : 'Add task'}</button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }

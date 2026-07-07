@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { HEALTHS } from '../utils/period.js';
+import Modal from './Modal.jsx';
 
 export default function AccountFormModal({ users, initialAccount, onClose, onSubmit }){
   const [form, setForm] = useState(() => initialAccount
@@ -32,8 +33,7 @@ export default function AccountFormModal({ users, initialAccount, onClose, onSub
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
+    <Modal onClose={onClose}>
         <div className="modal-head">
           <h3>{initialAccount ? 'Edit account' : 'New account'}</h3>
           <button className="icon-btn" onClick={onClose}>✕</button>
@@ -77,7 +77,6 @@ export default function AccountFormModal({ users, initialAccount, onClose, onSub
             <button className="btn btn-primary" disabled={busy}>{busy ? 'Saving…' : initialAccount ? 'Save changes' : 'Create account'}</button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }

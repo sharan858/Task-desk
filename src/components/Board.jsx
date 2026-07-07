@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { STAGES } from '../utils/period.js';
+import { STAGES, taskAnchor } from '../utils/period.js';
 import TaskCard from './TaskCard.jsx';
 
 export default function Board({ tasks, accountNameOf, onStageChange, onEdit, onDelete }){
@@ -20,7 +20,7 @@ export default function Board({ tasks, accountNameOf, onStageChange, onEdit, onD
   return (
     <div className="board">
       {STAGES.map(st => {
-        const items = tasks.filter(t => t.stage === st.id);
+        const items = tasks.filter(t => t.stage === st.id).sort((a, b) => taskAnchor(a) - taskAnchor(b));
         return (
           <div
             key={st.id}

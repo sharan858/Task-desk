@@ -159,7 +159,12 @@ export default function TaskView({ accounts, periodType, periodOffset, onRingCha
           <option value="all">All accounts</option>
           {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
         </select>
-        <button className="btn btn-primary" onClick={() => setModalTask(null)}>＋ New task</button>
+        <button
+          className="btn btn-primary"
+          onClick={() => accounts.length ? setModalTask(null) : toast('Create an account first — every task needs one')}
+        >
+          ＋ New task
+        </button>
       </div>
 
       {loading ? (

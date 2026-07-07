@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useState } from 'react';
+import Modal from '../components/Modal.jsx';
 
 const ConfirmContext = createContext(null);
 
@@ -20,16 +21,14 @@ export function ConfirmProvider({ children }){
     <ConfirmContext.Provider value={confirm}>
       {children}
       {state && (
-        <div className="modal-overlay" onClick={() => close(false)}>
-          <div className="modal" style={{ maxWidth: 420 }} onClick={e => e.stopPropagation()}>
+        <Modal onClose={() => close(false)} maxWidth={420}>
             <div className="modal-head"><h3>Please confirm</h3></div>
             <div className="modal-body"><p style={{ color: 'var(--ink-soft)' }}>{state.message}</p></div>
             <div className="modal-actions">
               <button className="btn btn-ghost" onClick={() => close(false)}>Cancel</button>
-              <button className={`btn ${state.danger ? 'btn-danger' : 'btn-primary'}`} onClick={() => close(true)}>{state.confirmLabel}</button>
+              <button className={`btn ${state.danger ? 'btn-danger' : 'btn-primary'}`} onClick={() => close(true)} autoFocus>{state.confirmLabel}</button>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
     </ConfirmContext.Provider>
   );
