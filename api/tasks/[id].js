@@ -30,12 +30,21 @@ export default async function handler(req, res){
       values.push(FINISHED.includes(fields.stage) ? new Date().toISOString() : null);
     }
     if(!sets.length) return res.status(400).json({ error: 'Nothing to update' });
+    sets.push(`updated_by = $${i++}`);
+    values.push(user.id);
     sets.push('updated_at = now()');
     values.push(id);
 
-    const result = await query(`UPDATE tasks SET ${sets.join(', ')} WHERE id = $${i} RETURNING *`, values);
+    const result = await query(`UPDATE tasks SET ${sets.join(', ')} WHERE id = $${i} RETURNING id`, values);
     if(!result.rows.length) return res.status(404).json({ error: 'Task not found' });
-    return res.status(200).json({ task: result.rows[0] });
+    const joined = await query(`
+      SELECT t.*, a.name AS account_name, cb.name AS created_by_name, ub.name AS updated_by_name
+      FROM tasks t
+      JOIN accounts a ON a.id = t.account_id
+      LEFT JOIN users cb ON cb.id = t.created_by
+      LEFT JOIN users ub ON ub.id = t.updated_by
+      WHERE t.id = $1`, [result.rows[0].id]);
+    return res.status(200).json({ task: joined.rows[0] });
   }
 
   if(req.method === 'DELETE'){

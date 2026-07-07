@@ -7,6 +7,7 @@ import StatStrip from '../components/StatStrip.jsx';
 import Board from '../components/Board.jsx';
 import TaskList from '../components/TaskList.jsx';
 import TaskFormModal from '../components/TaskFormModal.jsx';
+import OverdueBanner from '../components/OverdueBanner.jsx';
 
 export default function TaskView({ accounts, periodType, periodOffset, onRingChange }){
   const toast = useToast();
@@ -130,6 +131,7 @@ export default function TaskView({ accounts, periodType, periodOffset, onRingCha
 
   return (
     <div>
+      <OverdueBanner tasks={tasks} />
       <StatStrip tasks={periodTasks} />
 
       <div className="toolbar">

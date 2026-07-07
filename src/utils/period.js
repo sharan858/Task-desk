@@ -33,6 +33,14 @@ export function todayStart(){
 export function isOverdue(t){
   return !FINISHED.includes(t.stage) && t.due_date && new Date(t.due_date + 'T00:00:00') < todayStart();
 }
+export function isDueSoon(t, days = 3){
+  if(FINISHED.includes(t.stage) || !t.due_date) return false;
+  const due = new Date(t.due_date + 'T00:00:00');
+  const today = todayStart();
+  const soon = new Date(today);
+  soon.setDate(soon.getDate() + days);
+  return due >= today && due <= soon;
+}
 
 function dayStart(offset){ const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + offset); return d; }
 function dayEnd(offset){ const s = dayStart(offset); const e = new Date(s); e.setDate(e.getDate() + 1); return e; }

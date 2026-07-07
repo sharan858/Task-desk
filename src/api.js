@@ -37,5 +37,10 @@ export const api = {
   tasks: (accountId) => request(accountId ? `/tasks?accountId=${accountId}` : '/tasks'),
   createTask: (body) => request('/tasks', { method: 'POST', body }),
   updateTask: (id, body) => request(`/tasks/${id}`, { method: 'PATCH', body }),
-  deleteTask: (id) => request(`/tasks/${id}`, { method: 'DELETE' })
+  deleteTask: (id) => request(`/tasks/${id}`, { method: 'DELETE' }),
+
+  pipelineSummary: () => request('/pipeline/summary'),
+
+  forgotPassword: (email) => request('/auth/forgot-password', { method: 'POST', body: { email } }),
+  resetPassword: (token, newPassword) => request('/auth/reset-password', { method: 'POST', body: { token, newPassword } })
 };

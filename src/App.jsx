@@ -8,11 +8,14 @@ import TaskView from './pages/TaskView.jsx';
 import AccountView from './pages/AccountView.jsx';
 import Profile from './pages/Profile.jsx';
 import ImportExport from './pages/ImportExport.jsx';
+import PipelineDashboard from './pages/PipelineDashboard.jsx';
+import ResetPassword from './pages/ResetPassword.jsx';
 
 export default function App(){
   const { user, loading } = useAuth();
   const toast = useToast();
 
+  const [resetToken] = useState(() => new URLSearchParams(window.location.search).get('resetToken'));
   const [mainView, setMainView] = useState('tasks');
   const [periodType, setPeriodType] = useState('day');
   const [periodOffset, setPeriodOffset] = useState(0);
@@ -57,6 +60,15 @@ export default function App(){
     setPeriodOffset(0);
   }
 
+  if(resetToken){
+    return (
+      <ResetPassword
+        token={resetToken}
+        onDone={() => window.history.replaceState({}, '', window.location.pathname)}
+      />
+    );
+  }
+
   if(loading) return <div className="spinner" style={{ marginTop: '30vh' }} />;
   if(!user) return <Auth />;
 
@@ -76,6 +88,7 @@ export default function App(){
         <div className="seg">
           <button className={mainView === 'tasks' ? 'on' : ''} onClick={() => setMainView('tasks')}>🗒 Task View</button>
           <button className={mainView === 'accounts' ? 'on' : ''} onClick={() => setMainView('accounts')}>◈ Account View</button>
+          <button className={mainView === 'pipeline' ? 'on' : ''} onClick={() => setMainView('pipeline')}>📊 Pipeline</button>
           <button className={mainView === 'profile' ? 'on' : ''} onClick={() => setMainView('profile')}>👤 Profile</button>
           <button className={mainView === 'importExport' ? 'on' : ''} onClick={() => setMainView('importExport')}>⇄ Import / Export</button>
         </div>
@@ -94,6 +107,8 @@ export default function App(){
         />
       ) : mainView === 'importExport' ? (
         <ImportExport accounts={accounts} users={users} onRefreshAccounts={refreshAccounts} />
+      ) : mainView === 'pipeline' ? (
+        <PipelineDashboard />
       ) : (
         <AccountView accounts={accounts} users={users} onRefreshAccounts={refreshAccounts} />
       )}

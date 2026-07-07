@@ -53,8 +53,9 @@ export default function TaskListItem({ task, accountName, onToggleDone, onStageC
           ) : null}
 
           <div className="meta-line">
-            Created {fmtFull(new Date(task.created_at))}
+            Created {fmtFull(new Date(task.created_at))}{task.created_by_name ? ` by ${task.created_by_name}` : ''}
             {task.completed_at ? ` · Finished ${fmtFull(new Date(task.completed_at))}` : ''}
+            {task.updated_by_name ? ` · Last edited by ${task.updated_by_name} on ${fmtFull(new Date(task.updated_at))}` : ''}
           </div>
         </div>
         <div className="task-actions">

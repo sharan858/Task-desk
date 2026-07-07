@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS accounts (
   poc_email           TEXT NOT NULL DEFAULT '',
   deal_size           NUMERIC(14,2),
   created_by          INTEGER REFERENCES users(id),
+  updated_by          INTEGER REFERENCES users(id),
   created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -35,6 +36,9 @@ CREATE TABLE IF NOT EXISTS accounts (
 -- Backfill for databases created before POC fields existed.
 ALTER TABLE accounts ADD COLUMN IF NOT EXISTS poc_name  TEXT NOT NULL DEFAULT '';
 ALTER TABLE accounts ADD COLUMN IF NOT EXISTS poc_email TEXT NOT NULL DEFAULT '';
+
+-- Backfill for databases created before the activity trail (updated_by) existed.
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS updated_by INTEGER REFERENCES users(id);
 
 -- CSM (formerly "account owner") is now optional — "Unassigned" is a valid state.
 ALTER TABLE accounts ALTER COLUMN owner_id DROP NOT NULL;
@@ -58,12 +62,28 @@ CREATE TABLE IF NOT EXISTS tasks (
   description   TEXT NOT NULL DEFAULT '',
   notes         TEXT NOT NULL DEFAULT '',
   created_by    INTEGER REFERENCES users(id),
+  updated_by    INTEGER REFERENCES users(id),
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   completed_at  TIMESTAMPTZ,
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Backfill for databases created before the activity trail (updated_by) existed.
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS updated_by INTEGER REFERENCES users(id);
+
 CREATE INDEX IF NOT EXISTS idx_tasks_account ON tasks(account_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_stage ON tasks(stage);
 CREATE INDEX IF NOT EXISTS idx_accounts_owner ON accounts(owner_id);
 CREATE INDEX IF NOT EXISTS idx_accounts_manager ON accounts(account_manager_id);
+
+-- Password reset tokens (feature: forgot password). Raw token is emailed to the user;
+-- only its SHA-256 hash is stored so a DB read alone can't be used to reset a password.
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id          SERIAL PRIMARY KEY,
+  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token_hash  TEXT NOT NULL UNIQUE,
+  expires_at  TIMESTAMPTZ NOT NULL,
+  used_at     TIMESTAMPTZ,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_reset_tokens_user ON password_reset_tokens(user_id);

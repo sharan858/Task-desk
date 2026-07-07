@@ -10,7 +10,12 @@ export default async function handler(req, res){
   if(req.method === 'GET'){
     const { accountId } = req.query;
     const params = [];
-    let sql = `SELECT t.*, a.name AS account_name FROM tasks t JOIN accounts a ON a.id = t.account_id`;
+    let sql = `
+      SELECT t.*, a.name AS account_name, cb.name AS created_by_name, ub.name AS updated_by_name
+      FROM tasks t
+      JOIN accounts a ON a.id = t.account_id
+      LEFT JOIN users cb ON cb.id = t.created_by
+      LEFT JOIN users ub ON ub.id = t.updated_by`;
     if(accountId){
       params.push(accountId);
       sql += ` WHERE t.account_id = $${params.length}`;

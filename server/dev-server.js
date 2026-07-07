@@ -49,12 +49,15 @@ await mount('/api/auth/login', 'auth/login.js');
 await mount('/api/auth/logout', 'auth/logout.js');
 await mount('/api/auth/me', 'auth/me.js');
 await mount('/api/auth/change-password', 'auth/change-password.js');
+await mount('/api/auth/forgot-password', 'auth/forgot-password.js');
+await mount('/api/auth/reset-password', 'auth/reset-password.js');
 await mount('/api/users', 'users/index.js');
 await mount('/api/users/me', 'users/me.js');
 await mount('/api/accounts', 'accounts/index.js');
 await mount('/api/accounts/:id', 'accounts/[id].js');
 await mount('/api/tasks', 'tasks/index.js');
 await mount('/api/tasks/:id', 'tasks/[id].js');
+await mount('/api/pipeline/summary', 'pipeline/summary.js');
 
 const port = process.env.PORT || 3001;
 app.listen(port, () => console.log(`Dev API listening on http://localhost:${port}`));

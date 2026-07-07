@@ -19,10 +19,13 @@ export default async function handler(req, res){
 
   if(req.method === 'GET'){
     const result = await query(`
-      SELECT a.*, o.name AS owner_name, m.name AS account_manager_name
+      SELECT a.*, o.name AS owner_name, m.name AS account_manager_name,
+        cb.name AS created_by_name, ub.name AS updated_by_name
       FROM accounts a
       LEFT JOIN users o ON o.id = a.owner_id
       LEFT JOIN users m ON m.id = a.account_manager_id
+      LEFT JOIN users cb ON cb.id = a.created_by
+      LEFT JOIN users ub ON ub.id = a.updated_by
       WHERE a.id = $1`, [id]);
     if(!result.rows.length) return res.status(404).json({ error: 'Account not found' });
     return res.status(200).json({ account: result.rows[0] });
@@ -54,13 +57,24 @@ export default async function handler(req, res){
       }
     }
     if(!sets.length) return res.status(400).json({ error: 'Nothing to update' });
+    sets.push(`updated_by = $${i++}`);
+    values.push(user.id);
     sets.push('updated_at = now()');
     values.push(id);
 
     try{
-      const result = await query(`UPDATE accounts SET ${sets.join(', ')} WHERE id = $${i} RETURNING *`, values);
+      const result = await query(`UPDATE accounts SET ${sets.join(', ')} WHERE id = $${i} RETURNING id`, values);
       if(!result.rows.length) return res.status(404).json({ error: 'Account not found' });
-      return res.status(200).json({ account: result.rows[0] });
+      const joined = await query(`
+        SELECT a.*, o.name AS owner_name, m.name AS account_manager_name,
+          cb.name AS created_by_name, ub.name AS updated_by_name
+        FROM accounts a
+        LEFT JOIN users o ON o.id = a.owner_id
+        LEFT JOIN users m ON m.id = a.account_manager_id
+        LEFT JOIN users cb ON cb.id = a.created_by
+        LEFT JOIN users ub ON ub.id = a.updated_by
+        WHERE a.id = $1`, [result.rows[0].id]);
+      return res.status(200).json({ account: joined.rows[0] });
     }catch(e){
       if(e.code === '23505') return res.status(409).json({ error: 'An account with that name already exists' });
       throw e;

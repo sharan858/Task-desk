@@ -149,6 +149,15 @@ export default function AccountDetail({ accountId, accounts, users, onBack, onAc
             <b>Deal Size:</b> {account.deal_size != null ? `$${Number(account.deal_size).toLocaleString()}` : 'Not set'}
           </p>
         </div>
+        <div className="acct-info-card">
+          <h4>Activity</h4>
+          <p>
+            Created by <b>{account.created_by_name || 'Unknown'}</b> on {fmtFull(new Date(account.created_at))}
+            {account.updated_by_name && (
+              <><br />Last edited by <b>{account.updated_by_name}</b> on {fmtFull(new Date(account.updated_at))}</>
+            )}
+          </p>
+        </div>
       </div>
 
       {contacts.length > 0 && (
